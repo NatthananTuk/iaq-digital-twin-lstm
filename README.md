@@ -21,18 +21,36 @@ honest and lets reviewers verify the data themselves.
   the country, the one that is still actively reporting *and* has the longest
   history — LSTMs need long, continuous series to learn seasonality.
 
-### Data-quality notes (from initial EDA)
+## Exploratory data analysis
+
+Run with `python eda.py` (regenerates both figures below and prints findings).
 
 | Metric | Value |
 |---|---|
 | Rows (hourly) | 12,477 |
+| Time coverage of range | 72.4% (12,477 of 17,241 hourly slots) |
 | Mean / median PM2.5 | 22.2 / 18.2 µg/m³ |
 | Max PM2.5 | 92.4 µg/m³ |
 | Null / non-positive values | 0 / 0 |
 
-⚠️ The series is **not perfectly continuous** — there are 783 time gaps, the
-largest ~55 days. Preprocessing therefore builds training windows *within*
-continuous segments only, so no input sequence straddles a large gap.
+![PM2.5 hourly trend](screenshots/eda_pm25_trend.png)
+
+**What the data shows:**
+
+- **Strong yearly seasonality.** Monthly mean peaks in the dry / open-burning
+  season (**January ≈ 41 µg/m³**) and bottoms out in the monsoon
+  (**July ≈ 10 µg/m³**) — a ~4× swing well above the WHO 24h guideline (15).
+  This is the dominant pattern the LSTM should learn.
+- **Weak diurnal cycle.** Hour-of-day averages vary only ~1.5 µg/m³
+  (21.6–23.1), so time-of-day carries little signal here; the model leans on
+  recent-hours autocorrelation and the seasonal level instead.
+
+![Monthly and diurnal seasonality](screenshots/eda_seasonality.png)
+
+⚠️ **The series is not perfectly continuous** — 783 time gaps, the largest
+~55 days (visible as the straight diagonal segment around Aug–Sep 2025).
+Preprocessing therefore builds training windows *within* continuous segments
+only, so no input sequence straddles a large gap.
 
 ## Setup
 
@@ -51,6 +69,7 @@ python fetch_data.py          # writes data/pm25_raw.csv
 ## Roadmap
 
 - [x] `fetch_data.py` — pull real hourly PM2.5 from OpenAQ v3
+- [x] `eda.py` — trend + seasonality figures and data-quality report
 - [ ] `preprocess.py` — gap-aware windowing (24h lookback → 6h horizon) + scaling
 - [ ] `train_model.py` — LSTM (Keras/TensorFlow)
 - [ ] `evaluate.py` — LSTM vs. naive "last value" baseline (MAE, % improvement)
