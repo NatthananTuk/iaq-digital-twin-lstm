@@ -88,12 +88,38 @@ hours**. Key steps and why they matter:
 Outputs: `X_train/X_test` `(n, 24, 1)`, `y_train/y_test` `(n, 6)`, `scaler.pkl`.
 These artifacts are git-ignored (regenerate by running the pipeline).
 
+## Model & training (`train_model.py`)
+
+```
+Input(24, 1) → LSTM(64) → Dense(32, relu) → Dense(6)
+```
+
+The LSTM reads the 24-hour input sequence and compresses it into a 64-dim
+summary (its final hidden state); two dense layers turn that into six numbers —
+the forecast for each of the next six hours. ~19k parameters, trained with Adam
+on MSE loss (MAE reported as a readable metric).
+
+Training safeguards worth calling out:
+
+- **Validation = last 15% of the training windows (chronological), never the
+  test set.** The test set is untouched until `evaluate.py`, so reported test
+  scores aren't contaminated by model selection.
+- **EarlyStopping** on validation loss with `restore_best_weights` — training
+  stopped at epoch 85 and rolled back to the best epoch (77).
+- **Fixed random seeds** for reproducibility.
+
+The curve below shows train and validation loss falling together and
+flattening, with only a small gap — i.e. the model generalises rather than
+overfits.
+
+![Training curve](screenshots/training_curve.png)
+
 ## Roadmap
 
 - [x] `fetch_data.py` — pull real hourly PM2.5 from OpenAQ v3
 - [x] `eda.py` — trend + seasonality figures and data-quality report
 - [x] `preprocess.py` — gap-aware windowing (24h lookback → 6h horizon) + scaling
-- [ ] `train_model.py` — LSTM (Keras/TensorFlow)
+- [x] `train_model.py` — LSTM (Keras/TensorFlow)
 - [ ] `evaluate.py` — LSTM vs. naive "last value" baseline (MAE, % improvement)
 - [ ] `app.py` — Streamlit dashboard (history + live 6h forecast)
 
@@ -104,6 +130,7 @@ IAQ_LSTM/
 ├── fetch_data.py        # OpenAQ v3 ingestion → data/pm25_raw.csv
 ├── eda.py               # data-quality report + trend/seasonality charts
 ├── preprocess.py        # gap-aware windowing + scaling → .npy arrays
+├── train_model.py       # build + train the LSTM → lstm_pm25_model.keras
 ├── requirements.txt
 ├── .env.example         # template; copy to .env and add your key
 ├── data/
