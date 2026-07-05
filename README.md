@@ -66,11 +66,33 @@ python fetch_data.py          # writes data/pm25_raw.csv
 
 `.env` holds your `OPENAQ_API_KEY` and is git-ignored — never commit it.
 
+## Preprocessing (`preprocess.py`)
+
+Converts the raw series into supervised windows: **24 hours of history → next 6
+hours**. Key steps and why they matter:
+
+- **Small-gap interpolation.** The raw data is choppy — 65% of gaps are just
+  1–2 missing hours (sensors occasionally skip a reading). We put the series on
+  a complete hourly grid and linearly fill holes of **≤3 hours** (PM2.5 changes
+  smoothly), which lifts usable training windows by ~68% (3,467 → 5,838).
+  Genuine long gaps (up to ~55 days) are left as real breaks.
+- **Chronological split (80/20).** No shuffling — the earliest 80% of the
+  timeline trains, the latest 20% tests, so the model is never evaluated on
+  data older than what it trained on.
+- **Scaler fit on train only.** A `MinMaxScaler` learns its range from the
+  training values alone (test values can fall slightly outside `[0, 1]`, which
+  is the expected, leak-free behaviour) and is saved to `scaler.pkl`.
+- **Gap-aware windowing.** Windows are built only inside continuous segments,
+  so no input sequence straddles an unfilled gap.
+
+Outputs: `X_train/X_test` `(n, 24, 1)`, `y_train/y_test` `(n, 6)`, `scaler.pkl`.
+These artifacts are git-ignored (regenerate by running the pipeline).
+
 ## Roadmap
 
 - [x] `fetch_data.py` — pull real hourly PM2.5 from OpenAQ v3
 - [x] `eda.py` — trend + seasonality figures and data-quality report
-- [ ] `preprocess.py` — gap-aware windowing (24h lookback → 6h horizon) + scaling
+- [x] `preprocess.py` — gap-aware windowing (24h lookback → 6h horizon) + scaling
 - [ ] `train_model.py` — LSTM (Keras/TensorFlow)
 - [ ] `evaluate.py` — LSTM vs. naive "last value" baseline (MAE, % improvement)
 - [ ] `app.py` — Streamlit dashboard (history + live 6h forecast)
@@ -80,9 +102,13 @@ python fetch_data.py          # writes data/pm25_raw.csv
 ```
 IAQ_LSTM/
 ├── fetch_data.py        # OpenAQ v3 ingestion → data/pm25_raw.csv
+├── eda.py               # data-quality report + trend/seasonality charts
+├── preprocess.py        # gap-aware windowing + scaling → .npy arrays
 ├── requirements.txt
 ├── .env.example         # template; copy to .env and add your key
 ├── data/
 │   └── pm25_raw.csv
 └── screenshots/
+    ├── eda_pm25_trend.png
+    └── eda_seasonality.png
 ```
