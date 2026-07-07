@@ -6,3 +6,4 @@ venv/
 *.npy
 *.keras
 *.pkl
+*.log

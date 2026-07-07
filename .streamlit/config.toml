@@ -1,0 +1,7 @@
+# Streamlit theme: force a bright, light look regardless of the OS setting.
+[theme]
+base = "light"                 # light mode (white background, dark text)
+primaryColor = "#27ae60"       # green accent (matches the evaluation charts)
+backgroundColor = "#ffffff"    # main page background: pure white
+secondaryBackgroundColor = "#eef6ff"  # light blue for cards/tables/sidebar
+textColor = "#1a2330"          # near-black text for good contrast

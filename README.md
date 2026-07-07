@@ -152,6 +152,17 @@ Reading the results honestly:
   (recent monsoon months), so numbers would look different across a full dry
   season.
 
+## Dashboard (`app.py`)
+
+A minimal [Streamlit](https://streamlit.io) app that loads the trained model +
+scaler, takes the most recent 24 hours of data, and shows the forecast for the
+next 6 hours — the latest reading and the +1h forecast as headline metrics, a
+history-plus-forecast line chart, and a small table of the six predicted hours.
+
+```bash
+streamlit run app.py     # opens http://localhost:8501
+```
+
 ## Roadmap
 
 - [x] `fetch_data.py` — pull real hourly PM2.5 from OpenAQ v3
@@ -159,7 +170,7 @@ Reading the results honestly:
 - [x] `preprocess.py` — gap-aware windowing (24h lookback → 6h horizon) + scaling
 - [x] `train_model.py` — LSTM (Keras/TensorFlow)
 - [x] `evaluate.py` — LSTM vs. naive "last value" baseline (MAE, % improvement)
-- [ ] `app.py` — Streamlit dashboard (history + live 6h forecast)
+- [x] `app.py` — Streamlit dashboard (history + live 6h forecast)
 
 ## Project structure
 
@@ -170,6 +181,7 @@ IAQ_LSTM/
 ├── preprocess.py        # gap-aware windowing + scaling → .npy arrays
 ├── train_model.py       # build + train the LSTM → lstm_pm25_model.keras
 ├── evaluate.py          # test-set scoring vs. naive baseline → evaluation.png
+├── app.py               # minimal Streamlit dashboard (6-hour forecast)
 ├── requirements.txt
 ├── .env.example         # template; copy to .env and add your key
 ├── data/
