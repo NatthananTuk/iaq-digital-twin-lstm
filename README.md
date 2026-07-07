@@ -114,13 +114,51 @@ overfits.
 
 ![Training curve](screenshots/training_curve.png)
 
+## Results (`evaluate.py`)
+
+Scored on the **untouched test set** (latest 20% of the timeline, 3,149
+windows), in real µg/m³, against a naive "next 6 hours = last observed hour"
+baseline.
+
+| Metric (µg/m³) | LSTM | Naive baseline |
+|---|---|---|
+| **MAE** | **0.79** | 0.93 |
+| RMSE | 1.67 | 1.68 |
+
+**The LSTM cuts mean absolute error by ~15% over the naive baseline.**
+
+![Evaluation: MAE by lead time and an example forecast](screenshots/evaluation.png)
+
+Reading the results honestly:
+
+- **The advantage grows with lead time.** At +1h the naive guess is actually a
+  touch better (0.32 vs 0.35) — one hour out, "the same as last hour" is hard
+  to beat. From +2h onward the LSTM wins by an increasing margin (+6h: 1.26 vs
+  1.48), which is exactly where a forecast is useful.
+- **RMSE is nearly identical (1.67 vs 1.68).** Because RMSE punishes large
+  errors, this tells us the LSTM lowers typical errors but does **not** predict
+  sudden pollution spikes better than persistence — see limitations.
+
+### Limitations
+
+- **Single station, single variable.** One PM2.5 sensor, no weather/wind or
+  neighbouring stations, so no spatial or meteorological context.
+- **Spikes remain hard.** The model smooths routine hours well but doesn't
+  anticipate abrupt spikes (the flat RMSE gap).
+- **Gappy source data.** 28% of hours were missing; small holes were
+  interpolated and large ones dropped, which limits how much long-range
+  structure the model can see.
+- **Absolute errors are small partly because the test period is low-pollution**
+  (recent monsoon months), so numbers would look different across a full dry
+  season.
+
 ## Roadmap
 
 - [x] `fetch_data.py` — pull real hourly PM2.5 from OpenAQ v3
 - [x] `eda.py` — trend + seasonality figures and data-quality report
 - [x] `preprocess.py` — gap-aware windowing (24h lookback → 6h horizon) + scaling
 - [x] `train_model.py` — LSTM (Keras/TensorFlow)
-- [ ] `evaluate.py` — LSTM vs. naive "last value" baseline (MAE, % improvement)
+- [x] `evaluate.py` — LSTM vs. naive "last value" baseline (MAE, % improvement)
 - [ ] `app.py` — Streamlit dashboard (history + live 6h forecast)
 
 ## Project structure
@@ -131,6 +169,7 @@ IAQ_LSTM/
 ├── eda.py               # data-quality report + trend/seasonality charts
 ├── preprocess.py        # gap-aware windowing + scaling → .npy arrays
 ├── train_model.py       # build + train the LSTM → lstm_pm25_model.keras
+├── evaluate.py          # test-set scoring vs. naive baseline → evaluation.png
 ├── requirements.txt
 ├── .env.example         # template; copy to .env and add your key
 ├── data/
